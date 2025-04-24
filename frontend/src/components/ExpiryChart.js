@@ -17,11 +17,11 @@ const ExpiryChart = ({ data }) => {
   const [selectedMonth, setSelectedMonth] = useState('All');
 
   const months = [
-    'All',
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'All', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
 
+  // Get unique years from the data
   const years = useMemo(() => {
     const yearSet = new Set();
     safeData.forEach(med => {
@@ -58,6 +58,10 @@ const ExpiryChart = ({ data }) => {
     const headers = ['Month', 'Count'];
     const rows = filteredData.map(({ month, count }) => [month, count]);
 
+    const filename = selectedYear === 'All' && selectedMonth === 'All'
+      ? 'expiry_data_all_years_all_months.csv'
+      : `expiry_data_${selectedYear}_${selectedMonth}.csv`;
+
     let csvContent = "data:text/csv;charset=utf-8,"
       + headers.join(",") + "\n"
       + rows.map(e => e.join(",")).join("\n");
@@ -65,7 +69,7 @@ const ExpiryChart = ({ data }) => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `expiry_data_${selectedYear}_${selectedMonth}.csv`);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -75,16 +79,27 @@ const ExpiryChart = ({ data }) => {
     return <p style={{ textAlign: 'center', color: '#999' }}>No expiry data available to show chart.</p>;
   }
 
-  return (
-    <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '12px', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#333' }}>📅 Medicines Expiry by Month</h2>
+  if (filteredData.length === 0) {
+    return <p style={{ textAlign: 'center', color: '#999' }}>No data available for the selected filters.</p>;
+  }
 
-      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+  return (
+    <div style={{
+      marginTop: '30px', padding: '20px', backgroundColor: '#f9f9f9',
+      borderRadius: '12px', boxShadow: '0 0 10px rgba(0,0,0,0.1)', textAlign: 'center'
+    }}>
+      <h2 style={{ marginBottom: '20px', color: '#333' }}>📅 Medicines Expiry by Month</h2>
+
+      {/* Year and Month Filters */}
+      <div style={{ marginBottom: '20px' }}>
         <label style={{ marginRight: '10px' }}>Filter by Year:</label>
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
-          style={{ padding: '6px 10px', marginRight: '20px', borderRadius: '6px' }}
+          style={{
+            padding: '6px 10px', marginRight: '20px', borderRadius: '6px',
+            border: '1px solid #ddd'
+          }}
         >
           {years.map((year) => (
             <option key={year} value={year}>{year}</option>
@@ -95,7 +110,10 @@ const ExpiryChart = ({ data }) => {
         <select
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
-          style={{ padding: '6px 10px', marginRight: '20px', borderRadius: '6px' }}
+          style={{
+            padding: '6px 10px', marginRight: '20px', borderRadius: '6px',
+            border: '1px solid #ddd'
+          }}
         >
           {months.map((month) => (
             <option key={month} value={month}>{month}</option>
@@ -105,18 +123,15 @@ const ExpiryChart = ({ data }) => {
         <button
           onClick={downloadCSV}
           style={{
-            backgroundColor: '#4caf50',
-            color: 'white',
-            padding: '6px 12px',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
+            backgroundColor: '#4caf50', color: 'white', padding: '6px 12px',
+            border: 'none', borderRadius: '6px', cursor: 'pointer'
           }}
         >
           📥 Export CSV
         </button>
       </div>
 
+      {/* Chart */}
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={filteredData}>
           <CartesianGrid strokeDasharray="3 3" />

@@ -1,0 +1,19 @@
+.medicine {
+    border: 1px solid #ccc;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 12px;
+    background-color: #f8f8f8;
+    transition: 0.3s ease;
+  }
+  
+  .medicine.near-expiry {
+    background-color: #fff3cd; /* Light yellow */
+    border-left: 5px solid #ffc107;
+  }
+  
+  .medicine.expired {
+    background-color: #f8d7da; /* Light red */
+    border-left: 5px solid #dc3545;
+  }
+  

@@ -1,17 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { saveAs } from 'file-saver';
-
 import MedicineForm from './components/MedicineForm';
 import MedicineList from './components/MedicineList';
 import ExpiryChart from './components/ExpiryChart';
-
+import Dashboard from './components/Dashboard';
+import LoginPage from './components/LoginPage';
 import './styles.css';
 
+// Axios config: Always send cookies
+axios.defaults.withCredentials = true;
+
 function App() {
+  const [authenticated, setAuthenticated] = useState(false);
   const [medicines, setMedicines] = useState([]);
   const [nearExpiry, setNearExpiry] = useState([]);
 
+  // Check if the user is authenticated
+  const checkAuth = async () => {
+    try {
+      await axios.get('http://localhost:5000/check-auth'); // Check auth from backend
+      setAuthenticated(true); // If successful, set authenticated to true
+    } catch (error) {
+      setAuthenticated(false); // If not, set authenticated to false
+    }
+  };
+
+  // Fetch medicines and near expiry medicines from the backend
   const fetchData = async () => {
     try {
       const allRes = await axios.get('http://localhost:5000/get-medicines');
@@ -23,10 +37,18 @@ function App() {
     }
   };
 
+  // Use useEffect hook to check authentication status and fetch data accordingly
   useEffect(() => {
-    fetchData();
+    checkAuth(); // Check if the user is authenticated on app load
   }, []);
 
+  useEffect(() => {
+    if (authenticated) {
+      fetchData(); // Fetch data only if authenticated
+    }
+  }, [authenticated]);
+
+  // Handle CSV export for all medicines
   const exportMedicinesCSV = () => {
     const headers = ['Name', 'Expiry Date', 'Quantity', 'Manufacturer'];
     const rows = medicines.map(med => [
@@ -36,30 +58,43 @@ function App() {
       med.manufacturer
     ]);
 
-    let csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n" 
-      + rows.map(row => row.join(",")).join("\n");
+    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(row => row.join(",")).join("\n");
 
     const blob = new Blob([decodeURIComponent(encodeURI(csvContent))], {
       type: 'text/csv;charset=utf-8;'
     });
-    saveAs(blob, 'all_medicines.csv');
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'all_medicines.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
+
+  // If not authenticated, show the LoginPage component
+  if (!authenticated) {
+    return <LoginPage onLoginSuccess={() => setAuthenticated(true)} />;
+  }
+  
 
   return (
     <div className="container">
+      <Dashboard />
+
       <h1>Pharmacy Expiry Alert</h1>
 
       <MedicineForm onAdd={fetchData} />
 
-      <button onClick={exportMedicinesCSV} style={{ 
-        margin: '10px 0', 
-        backgroundColor: '#4caf50', 
-        color: 'white', 
-        padding: '8px 16px', 
-        border: 'none', 
-        borderRadius: '5px', 
-        cursor: 'pointer' 
+      <button onClick={exportMedicinesCSV} style={{
+        margin: '10px 0',
+        backgroundColor: '#4caf50',
+        color: 'white',
+        padding: '8px 16px',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer'
       }}>
         📥 Export All Medicines to CSV
       </button>

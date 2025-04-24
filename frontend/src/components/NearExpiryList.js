@@ -8,7 +8,9 @@ function NearExpiryList() {
     const fetchNearExpiry = async () => {
       try {
         const res = await axios.get('http://localhost:5000/get-near-expiry');
-        setNearExpiryMeds(res.data);
+        // Sort the data by expiry_date after fetching
+        const sortedData = res.data.sort((a, b) => new Date(a.expiry_date) - new Date(b.expiry_date));
+        setNearExpiryMeds(sortedData); // Update the state with sorted data
       } catch (error) {
         console.error('Error fetching near expiry medicines:', error);
       }
@@ -54,9 +56,5 @@ function NearExpiryList() {
     </div>
   );
 }
-setNearExpiryMeds(
-    res.data.sort((a, b) => new Date(a.expiry_date) - new Date(b.expiry_date))
-  );
-  
 
 export default NearExpiryList;
